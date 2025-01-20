@@ -104,38 +104,49 @@ async function run() {
     });
 
     // users
-    app.get('/users', async(req, res) => {
+    app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
-    })
-
+    });
 
     // create Operation
-    app.post('/users', async(req, res) => {
+    app.post("/users", async (req, res) => {
       const user = req.body;
-      
+
       // validate existing user
-      const query = {email: user.email}
-      const existingUser = await usersCollection.findOne(query)
-      if(existingUser){
-        return res.send({message: 'User Already Exist', insertedId: null})
+      const query = { email: user.email };
+      const existingUser = await usersCollection.findOne(query);
+      if (existingUser) {
+        return res.send({ message: "User Already Exist", insertedId: null });
       }
 
       const result = await usersCollection.insertOne(user);
       res.send(result);
-    })
-
+    });
 
     // delete Operation
-    app.delete('/users/:id', async(req, res) => {
+    app.delete("/users/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const result = await usersCollection.deleteOne(query);
       res.send(result);
-    })
+    });
 
+    // update Operation
+    app.patch("/users/role/:id", async (req, res) => {
+      const id = req.params.id;
+      const role = req.body.role;
 
+      const query = { _id: new ObjectId(id) };
+      const updatedRole = {
+        $set: { role },
+      };
 
+      const result = await usersCollection.updateOne(query, updatedRole);
+      res.send(result);
+
+      
+    });
   } finally {
   }
 }
