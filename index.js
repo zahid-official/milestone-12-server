@@ -47,6 +47,18 @@ async function run() {
     const database = client.db("scholarshipDB");
     const usersCollection = database.collection("usersCollection");
 
+    // custom middleware for verify admin after verifyToken
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decodedToken.email;
+      const query = { email };
+      const userData = await usersCollection.findOne(query);
+      const admin = userData?.role === "Admin";
+      if (!admin) {
+        return res.status(403).send({ message: "Forbidden Access" });
+      }
+      next();
+    };
+
     // jwt token generate (only for personal info based route)
     app.post("/jwt", (req, res) => {
       const user = req.body;
@@ -56,16 +68,13 @@ async function run() {
       res.send({ token });
     });
 
-
-
-
     // read Operation
     app.get("/", (req, res) => {
       res.send("Server Connected Successfully");
     });
 
-    // users
-    app.get("/users", verifyJWT, async (req, res) => {
+    // manage users data
+    app.get("/users", verifyJWT, verifyAdmin, async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
@@ -74,39 +83,28 @@ async function run() {
     app.get("/users/role/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
 
-      // verify JWT email 
-      if(req.decodedToken.email !== email){
-        return res.status(403).send({message: "Forbidden Access"});
+      // verify JWT email
+      if (req.decodedToken.email !== email) {
+        return res.status(403).send({ message: "Forbidden Access" });
       }
 
-      const query = {email};
+      const query = { email };
       const userData = await usersCollection.findOne(query);
-      
+
       let user = false;
       let admin = false;
       let moderator = false;
 
-      if(userData?.role === "Admin"){
+      if (userData?.role === "Admin") {
         admin = true;
-      }
-      else if(userData?.role === "Moderator"){
+      } else if (userData?.role === "Moderator") {
         moderator = true;
-      }
-      else{
+      } else {
         user = true;
       }
-      
-      res.send({admin, moderator, user})
-    })
 
-
-
-
-
-
-
-
-
+      res.send({ admin, moderator, user });
+    });
 
     // create Operation
     app.post("/users", async (req, res) => {
@@ -123,12 +121,6 @@ async function run() {
       res.send(result);
     });
 
-
-
-
-
-
-
     // delete Operation
     app.delete("/users/:id", async (req, res) => {
       const id = req.params.id;
@@ -136,12 +128,6 @@ async function run() {
       const result = await usersCollection.deleteOne(query);
       res.send(result);
     });
-
-
-
-
-
-
 
     // update Operation
     app.patch("/users/role/:id", async (req, res) => {
@@ -156,12 +142,6 @@ async function run() {
       const result = await usersCollection.updateOne(query, updatedRole);
       res.send(result);
     });
-
-
-
-
-
-
   } finally {
   }
 }
