@@ -1,6 +1,5 @@
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
-const cookieParser = require("cookie-parser");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const express = require("express");
 const cors = require("cors");
@@ -8,23 +7,12 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // middleware
-app.use(
-  cors({
-    // set origin of production site
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "http://localhost:5175",
-    ],
-    credentials: true,
-  })
-);
+app.use(cors());
 app.use(express.json());
-app.use(cookieParser());
 
 // custom middleware for jwt verify
 const verifyJWT = (req, res, next) => {
-  const token = req.cookies?.token;
+  const token = req.headers?.authorization;
 
   if (!token) {
     return res.status(401).send({ message: "Unauthorize Access" });
@@ -62,41 +50,14 @@ async function run() {
     // jwt token generate (only for personal info based route)
     app.post("/jwt", (req, res) => {
       const user = req.body;
-
       const token = jwt.sign(user, process.env.ACCESS_TOKEN, {
         expiresIn: "1h",
       });
-      res
-        .cookie("token", token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-        })
-        .send({ login: true });
+      res.send({ token });
     });
 
-    // jwt token remove
-    app.post("/jwtRemove", (req, res) => {
-      res
-        .clearCookie("token", {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-        })
-        .send({ logout: true });
-    });
 
-    // verify token in private info route ( Demo )
-    app.get("/privateInfo/:email", verifyJWT, (req, res) => {
-      const email = req.params.email;
 
-      // verify token email
-      if (req.decodedToken.email !== email) {
-        return res.status(403).send({ message: "Forbidden Access" });
-      }
-
-      res.send("Sent Database Data based on paramas email");
-    });
 
     // read Operation
     app.get("/", (req, res) => {
@@ -104,10 +65,48 @@ async function run() {
     });
 
     // users
-    app.get("/users", async (req, res) => {
+    app.get("/users", verifyJWT, async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
+
+    // role base user
+    app.get("/users/role/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+
+      // verify JWT email 
+      if(req.decodedToken.email !== email){
+        return res.status(403).send({message: "Forbidden Access"});
+      }
+
+      const query = {email};
+      const userData = await usersCollection.findOne(query);
+      
+      let user = false;
+      let admin = false;
+      let moderator = false;
+
+      if(userData?.role === "Admin"){
+        admin = true;
+      }
+      else if(userData?.role === "Moderator"){
+        moderator = true;
+      }
+      else{
+        user = true;
+      }
+      
+      res.send({admin, moderator, user})
+    })
+
+
+
+
+
+
+
+
+
 
     // create Operation
     app.post("/users", async (req, res) => {
@@ -124,6 +123,12 @@ async function run() {
       res.send(result);
     });
 
+
+
+
+
+
+
     // delete Operation
     app.delete("/users/:id", async (req, res) => {
       const id = req.params.id;
@@ -131,6 +136,12 @@ async function run() {
       const result = await usersCollection.deleteOne(query);
       res.send(result);
     });
+
+
+
+
+
+
 
     // update Operation
     app.patch("/users/role/:id", async (req, res) => {
@@ -144,9 +155,13 @@ async function run() {
 
       const result = await usersCollection.updateOne(query, updatedRole);
       res.send(result);
-
-      
     });
+
+
+
+
+
+
   } finally {
   }
 }
