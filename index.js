@@ -46,6 +46,12 @@ async function run() {
     // database
     const database = client.db("scholarshipDB");
     const usersCollection = database.collection("usersCollection");
+    const scholarshipCollection = database.collection("scholarshipCollection");
+
+
+
+
+
 
     // custom middleware for verify admin after verifyToken
     const verifyAdmin = async (req, res, next) => {
@@ -59,6 +65,18 @@ async function run() {
       next();
     };
 
+    // custom middleware for verify moderator after verifyToken
+    const verifyModerator = async (req, res, next) => {
+      const email = req.decodedToken.email;
+      const query = { email };
+      const userData = await usersCollection.findOne(query);
+      const moderator = userData?.role === "Admin" || userData?.role === "Moderator";
+      if (!moderator) {
+        return res.status(403).send({ message: "Forbidden Access" });
+      }
+      next();
+    };
+
     // jwt token generate (only for personal info based route)
     app.post("/jwt", (req, res) => {
       const user = req.body;
@@ -67,6 +85,11 @@ async function run() {
       });
       res.send({ token });
     });
+
+
+
+
+
 
     // read Operation
     app.get("/", (req, res) => {
@@ -106,6 +129,13 @@ async function run() {
       res.send({ admin, moderator, user });
     });
 
+
+
+
+
+
+
+
     // create Operation
     app.post("/users", async (req, res) => {
       const user = req.body;
@@ -121,16 +151,36 @@ async function run() {
       res.send(result);
     });
 
+    // add scholarship
+    app.post("/addScholarship", verifyJWT, verifyModerator, async(req, res) => {
+      const data = req.body;
+      const result = await scholarshipCollection.insertOne(data);
+      res.send(result);
+    })
+
+
+
+
+
+
+
+
     // delete Operation
-    app.delete("/users/:id", async (req, res) => {
+    app.delete("/users/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await usersCollection.deleteOne(query);
       res.send(result);
     });
 
+
+
+
+
+
+
     // update Operation
-    app.patch("/users/role/:id", async (req, res) => {
+    app.patch("/users/role/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const role = req.body.role;
 
@@ -142,6 +192,8 @@ async function run() {
       const result = await usersCollection.updateOne(query, updatedRole);
       res.send(result);
     });
+
+
   } finally {
   }
 }
