@@ -131,6 +131,14 @@ async function run() {
 
 
 
+    // top scholarship
+    app.get('/topScholarship', async(req,res) => {
+      const result = await scholarshipCollection.find().toArray();
+      res.send(result);
+    })
+
+
+
 
 
 
