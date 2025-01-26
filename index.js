@@ -48,6 +48,7 @@ async function run() {
     const database = client.db("scholarshipDB");
     const usersCollection = database.collection("usersCollection");
     const scholarshipCollection = database.collection("scholarshipCollection");
+    const appliedScholarshipCollection = database.collection("appliedScholarshipCollection");
 
 
 
@@ -130,8 +131,6 @@ async function run() {
       res.send({ admin, moderator, user });
     });
 
-
-
     // top scholarship
     app.get('/topScholarship', async(req,res) => {
       const result = await scholarshipCollection.find().toArray();
@@ -147,6 +146,13 @@ async function run() {
   })
 
 
+  // userId for applicantDetails
+  app.get('/usersId/:email', async(req, res) => {
+    const email = req.params.email;
+    const query = {email};
+    const result = await usersCollection.findOne(query);
+    res.send(result);
+  })
 
 
 
@@ -187,6 +193,13 @@ async function run() {
       res.send({
         clientSecret: paymentIntent.client_secret
       })
+    })
+
+    // appliedScholarshipCollection
+    app.post('/appliedScholarship', async(req, res) => {
+      const data = req.body;
+      const result = await appliedScholarshipCollection.insertOne(data);
+      res.send(result);
     })
 
 
