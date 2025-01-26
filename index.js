@@ -4,6 +4,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const express = require("express");
 const cors = require("cors");
 const app = express();
+const stripe = require('stripe')(process.env.STRIPE_KEY);
 const port = process.env.PORT || 5000;
 
 // middleware
@@ -174,7 +175,19 @@ async function run() {
     })
 
 
-
+    // stripe paymentIntent
+    app.post("/stripe", async(req, res) => {
+      const price = req.body.fee;
+      const amount = parseInt(price * 100);
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount,
+        currency: "usd",
+        payment_method_types: ["card"]
+      })
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      })
+    })
 
 
 
