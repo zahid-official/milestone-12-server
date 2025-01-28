@@ -101,7 +101,7 @@ async function run() {
 
 
 
-    
+
     // read Operation (conncet 2 server)
     app.get("/", (req, res) => {
       res.send("Server Connected Successfully");
@@ -304,6 +304,14 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await reviewCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // delete Scholarship
+    app.delete("/deleteScholarship/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await scholarshipCollection.deleteOne(query);
       res.send(result);
     });
 
