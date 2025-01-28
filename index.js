@@ -95,6 +95,13 @@ async function run() {
 
 
 
+
+
+
+
+
+
+    
     // read Operation (conncet 2 server)
     app.get("/", (req, res) => {
       res.send("Server Connected Successfully");
@@ -155,8 +162,14 @@ async function run() {
       res.send(result);
     });
 
-    // all applied scholarships
+    // all scholarships
     app.get("/allScholarships", async (req, res) => {
+      const result = await scholarshipCollection.find().toArray();
+      res.send(result);
+    });
+
+    // applied scholarships
+    app.get("/appliedScholarships", async (req, res) => {
       const result = await appliedScholarshipCollection.find().toArray();
       res.send(result);
     });
@@ -182,6 +195,13 @@ async function run() {
       const result = await reviewCollection.find(query).toArray();
       res.send(result);
     });
+
+
+
+
+
+
+
 
 
 
@@ -258,6 +278,11 @@ async function run() {
 
 
 
+
+
+
+
+
     // delete Operation (userDelete)
     app.delete("/users/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
@@ -282,7 +307,12 @@ async function run() {
       res.send(result);
     });
 
-    
+
+
+
+
+
+
 
 
 
@@ -340,7 +370,7 @@ async function run() {
       res.send(result);
     });
 
-    // editApplication
+    // editReview
     app.patch("/editReview/:id", async (req, res) => {
       const id = req.params.id;
       const { rating, comment, reviewDate } = req.body;
@@ -358,7 +388,47 @@ async function run() {
       res.send(result);
     });
 
+    // editScholarship
+    app.patch("/editScholarship/:id", async (req, res) => {
+      const id = req.params.id;
+      const {
+        universityName,
+        universityCountry,
+        universityCity,
+        universityRank,
+        scholarshipName,
+        scholarshipCategory,
+        subjectCategory,
+        deadline,
+        degree,
+        stipend,
+        tuitionFee,
+        serviceCharge,
+        applicationFees,
+      } = req.body;
 
+      const query = { _id: new ObjectId(id) };
+      const updatedData = {
+        $set: {
+          universityName,
+          universityCountry,
+          universityCity,
+          universityRank,
+          scholarshipName,
+          scholarshipCategory,
+          subjectCategory,
+          deadline,
+          degree,
+          stipend,
+          tuitionFee,
+          serviceCharge,
+          applicationFees,
+        },
+      };
+
+      const result = await scholarshipCollection.updateOne(query, updatedData);
+      res.send(result);
+    });
 
 
 
