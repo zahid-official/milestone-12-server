@@ -48,9 +48,8 @@ async function run() {
     const database = client.db("scholarshipDB");
     const usersCollection = database.collection("usersCollection");
     const scholarshipCollection = database.collection("scholarshipCollection");
-    const appliedScholarshipCollection = database.collection(
-      "appliedScholarshipCollection"
-    );
+    const appliedScholarshipCollection = database.collection("appliedScholarshipCollection");
+    const reviewCollection = database.collection("reviewCollection");
 
     // custom middleware for verify admin after verifyToken
     const verifyAdmin = async (req, res, next) => {
@@ -85,6 +84,18 @@ async function run() {
       });
       res.send({ token });
     });
+
+
+
+
+
+
+
+
+
+
+
+
 
     // read Operation
     app.get("/", (req, res) => {
@@ -160,6 +171,21 @@ async function run() {
       res.send(result);
     });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // create Operation
     app.post("/users", async (req, res) => {
       const user = req.body;
@@ -208,13 +234,49 @@ async function run() {
       res.send(result);
     });
 
-    // delete Operation
+    // add review in Review Collection
+    app.post("/addReview", async(req, res) => {
+      const data = req.body
+      const result = await reviewCollection.insertOne(data);
+      res.send(result);
+    })
+
+
+
+
+
+
+
+
+
+
+
+    // delete Operation (userDelete)
     app.delete("/users/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await usersCollection.deleteOne(query);
       res.send(result);
     });
+
+    // delete myApplication
+    app.delete("/deleteMyApplication/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await appliedScholarshipCollection.deleteOne(query);
+      res.send(result);
+    });
+
+
+
+
+
+
+
+
+
+
+
 
     // update Operation
     app.patch("/users/role/:id", verifyJWT, verifyAdmin, async (req, res) => {
@@ -241,7 +303,6 @@ async function run() {
         applicantCountry,
         applicantDistrict,
       } = req.body;
-      
 
       const query = { _id: new ObjectId(id) };
       const updatedData = {
@@ -261,6 +322,19 @@ async function run() {
       );
       res.send(result);
     });
+
+
+
+
+
+
+
+
+
+
+
+
+
   } finally {
   }
 }
