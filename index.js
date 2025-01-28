@@ -87,21 +87,6 @@ async function run() {
       res.send({ token });
     });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // read Operation (conncet 2 server)
     app.get("/", (req, res) => {
       res.send("Server Connected Successfully");
@@ -196,22 +181,6 @@ async function run() {
       res.send(result);
     });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // create Operation (create User)
     app.post("/users", async (req, res) => {
       const user = req.body;
@@ -267,22 +236,6 @@ async function run() {
       res.send(result);
     });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // delete Operation (userDelete)
     app.delete("/users/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
@@ -315,31 +268,13 @@ async function run() {
       res.send(result);
     });
 
-    // delete Review
-    app.delete("/deleteReview/:id", async (req, res) => {
+    // delete Scholarship
+    app.delete("/deleteScholarship/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
-      const result = await reviewCollection.deleteOne(query);
+      const result = await scholarshipCollection.deleteOne(query);
       res.send(result);
     });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     // update Operation
     app.patch("/users/role/:id", verifyJWT, verifyAdmin, async (req, res) => {
@@ -446,13 +381,56 @@ async function run() {
       res.send(result);
     });
 
+    // status update
+    app.patch("/appliedScholarship/status/:id", async (req, res) => {
+      const id = req.params.id;
+      const status = req.body.status;
 
+      const query = { _id: new ObjectId(id) };
+      const updatedStatus = {
+        $set: { status },
+      };
 
+      const result = await appliedScholarshipCollection.updateOne(
+        query,
+        updatedStatus
+      );
+      res.send(result);
+    });
 
+    // update Status AppliedScholarship
+    app.patch("/deleteAppliedScholarship/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const status = "Rejected";
+      const query = { _id: new ObjectId(id) };
+      const updatedData = {
+        $set: {
+          status,
+        },
+      };
+      const result = await appliedScholarshipCollection.updateOne(
+        query,
+        updatedData
+      );
+      res.send(result);
+    });
 
+    // feedback
+    app.patch("/feedback/:id", async (req, res) => {
+      const id = req.params.id;
+      const { feedback } = req.body;
 
+      const query = { _id: new ObjectId(id) };
+      const updatedData = {
+        $set: {
+          feedback,
+        },
+      };
 
-
+      const result = await appliedScholarshipCollection.updateOne(query, updatedData);
+      res.send(result);
+    });
   } finally {
   }
 }
