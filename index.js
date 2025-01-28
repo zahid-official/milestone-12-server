@@ -4,7 +4,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const express = require("express");
 const cors = require("cors");
 const app = express();
-const stripe = require('stripe')(process.env.STRIPE_KEY);
+const stripe = require("stripe")(process.env.STRIPE_KEY);
 const port = process.env.PORT || 5000;
 
 // middleware
@@ -48,12 +48,9 @@ async function run() {
     const database = client.db("scholarshipDB");
     const usersCollection = database.collection("usersCollection");
     const scholarshipCollection = database.collection("scholarshipCollection");
-    const appliedScholarshipCollection = database.collection("appliedScholarshipCollection");
-
-
-
-
-
+    const appliedScholarshipCollection = database.collection(
+      "appliedScholarshipCollection"
+    );
 
     // custom middleware for verify admin after verifyToken
     const verifyAdmin = async (req, res, next) => {
@@ -72,7 +69,8 @@ async function run() {
       const email = req.decodedToken.email;
       const query = { email };
       const userData = await usersCollection.findOne(query);
-      const moderator = userData?.role === "Admin" || userData?.role === "Moderator";
+      const moderator =
+        userData?.role === "Admin" || userData?.role === "Moderator";
       if (!moderator) {
         return res.status(403).send({ message: "Forbidden Access" });
       }
@@ -87,11 +85,6 @@ async function run() {
       });
       res.send({ token });
     });
-
-
-
-
-
 
     // read Operation
     app.get("/", (req, res) => {
@@ -132,31 +125,40 @@ async function run() {
     });
 
     // top scholarship
-    app.get('/topScholarship', async(req,res) => {
+    app.get("/topScholarship", async (req, res) => {
       const result = await scholarshipCollection.find().toArray();
       res.send(result);
-    })
+    });
 
     // scholarship Details
-  app.get('/scholarshipDetails/:id', async(req, res) => {
-    const id = req.params.id;
-    const query = {_id: new ObjectId(id)};
-    const result = await scholarshipCollection.findOne(query);
-    res.send(result);
-  })
+    app.get("/scholarshipDetails/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await scholarshipCollection.findOne(query);
+      res.send(result);
+    });
 
+    // userId for applicantDetails
+    app.get("/usersId/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const result = await usersCollection.findOne(query);
+      res.send(result);
+    });
 
-  // userId for applicantDetails
-  app.get('/usersId/:email', async(req, res) => {
-    const email = req.params.email;
-    const query = {email};
-    const result = await usersCollection.findOne(query);
-    res.send(result);
-  })
+    // all applied scholarships
+    app.get("/allScholarships", async (req, res) => {
+      const result = await appliedScholarshipCollection.find().toArray();
+      res.send(result);
+    });
 
-
-
-
+    // my scholarships
+    app.get("/myScholarships/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const result = await appliedScholarshipCollection.find(query).toArray();
+      res.send(result);
+    });
 
     // create Operation
     app.post("/users", async (req, res) => {
@@ -174,37 +176,37 @@ async function run() {
     });
 
     // add scholarship
-    app.post("/addScholarship", verifyJWT, verifyModerator, async(req, res) => {
-      const data = req.body;
-      const result = await scholarshipCollection.insertOne(data);
-      res.send(result);
-    })
-
+    app.post(
+      "/addScholarship",
+      verifyJWT,
+      verifyModerator,
+      async (req, res) => {
+        const data = req.body;
+        const result = await scholarshipCollection.insertOne(data);
+        res.send(result);
+      }
+    );
 
     // stripe paymentIntent
-    app.post("/stripe", async(req, res) => {
+    app.post("/stripe", async (req, res) => {
       const price = req.body.fee;
       const amount = parseInt(price * 100);
       const paymentIntent = await stripe.paymentIntents.create({
         amount,
         currency: "usd",
-        payment_method_types: ["card"]
-      })
+        payment_method_types: ["card"],
+      });
       res.send({
-        clientSecret: paymentIntent.client_secret
-      })
-    })
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
 
-    // appliedScholarshipCollection
-    app.post('/appliedScholarship', async(req, res) => {
+    // applied Scholarship Collection
+    app.post("/appliedScholarship", async (req, res) => {
       const data = req.body;
       const result = await appliedScholarshipCollection.insertOne(data);
       res.send(result);
-    })
-
-
-
-
+    });
 
     // delete Operation
     app.delete("/users/:id", verifyJWT, verifyAdmin, async (req, res) => {
@@ -213,12 +215,6 @@ async function run() {
       const result = await usersCollection.deleteOne(query);
       res.send(result);
     });
-
-
-
-
-
-
 
     // update Operation
     app.patch("/users/role/:id", verifyJWT, verifyAdmin, async (req, res) => {
@@ -234,7 +230,37 @@ async function run() {
       res.send(result);
     });
 
+    // editApplication
+    app.patch("/editApplication/:id", async (req, res) => {
+      const id = req.params.id;
+      const {
+        gender,
+        sscResult,
+        hscResult,
+        applyingDegree,
+        applicantCountry,
+        applicantDistrict,
+      } = req.body;
+      
 
+      const query = { _id: new ObjectId(id) };
+      const updatedData = {
+        $set: {
+          gender,
+          sscResult,
+          hscResult,
+          applyingDegree,
+          applicantCountry,
+          applicantDistrict,
+        },
+      };
+
+      const result = await appliedScholarshipCollection.updateOne(
+        query,
+        updatedData
+      );
+      res.send(result);
+    });
   } finally {
   }
 }
