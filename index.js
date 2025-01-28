@@ -184,7 +184,7 @@ async function run() {
 
     // all Reviews
     app.get("/allReviews", async (req, res) => {
-      const result = await appliedScholarshipCollection.find().toArray();
+      const result = await reviewCollection.find().toArray();
       res.send(result);
     });
 
@@ -312,6 +312,14 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await scholarshipCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // delete Review
+    app.delete("/deleteReview/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await reviewCollection.deleteOne(query);
       res.send(result);
     });
 
