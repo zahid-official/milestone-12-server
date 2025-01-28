@@ -181,9 +181,18 @@ async function run() {
       res.send(result);
     });
 
+    
+
+
+
     // create Operation (create User)
     app.post("/users", async (req, res) => {
       const user = req.body;
+      
+      // set role
+      if(!user.role){
+        user.role = "User";
+      }
 
       // validate existing user
       const query = { email: user.email };
@@ -236,6 +245,28 @@ async function run() {
       res.send(result);
     });
 
+      // filter users
+  app.get('/filter/:role', async(req, res) => {
+    const role = req.params.role;
+    const query = {role};
+    const cursor = usersCollection.find(query);
+    const result = await cursor.toArray();
+    res.send(result);
+  })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // delete Operation (userDelete)
     app.delete("/users/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
@@ -275,6 +306,17 @@ async function run() {
       const result = await scholarshipCollection.deleteOne(query);
       res.send(result);
     });
+
+
+
+
+
+
+
+
+
+
+
 
     // update Operation
     app.patch("/users/role/:id", verifyJWT, verifyAdmin, async (req, res) => {
@@ -431,6 +473,20 @@ async function run() {
       const result = await appliedScholarshipCollection.updateOne(query, updatedData);
       res.send(result);
     });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   } finally {
   }
 }
