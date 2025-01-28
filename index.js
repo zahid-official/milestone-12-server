@@ -48,7 +48,9 @@ async function run() {
     const database = client.db("scholarshipDB");
     const usersCollection = database.collection("usersCollection");
     const scholarshipCollection = database.collection("scholarshipCollection");
-    const appliedScholarshipCollection = database.collection("appliedScholarshipCollection");
+    const appliedScholarshipCollection = database.collection(
+      "appliedScholarshipCollection"
+    );
     const reviewCollection = database.collection("reviewCollection");
 
     // custom middleware for verify admin after verifyToken
@@ -93,11 +95,7 @@ async function run() {
 
 
 
-
-
-
-
-    // read Operation
+    // read Operation (conncet 2 server)
     app.get("/", (req, res) => {
       res.send("Server Connected Successfully");
     });
@@ -171,6 +169,19 @@ async function run() {
       res.send(result);
     });
 
+    // all Reviews
+    app.get("/allReviews", async (req, res) => {
+      const result = await appliedScholarshipCollection.find().toArray();
+      res.send(result);
+    });
+
+    // my scholarships
+    app.get("/myReviews/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const result = await reviewCollection.find(query).toArray();
+      res.send(result);
+    });
 
 
 
@@ -181,12 +192,7 @@ async function run() {
 
 
 
-
-
-
-
-
-    // create Operation
+    // create Operation (create User)
     app.post("/users", async (req, res) => {
       const user = req.body;
 
@@ -235,11 +241,12 @@ async function run() {
     });
 
     // add review in Review Collection
-    app.post("/addReview", async(req, res) => {
-      const data = req.body
+    app.post("/addReview", async (req, res) => {
+      const data = req.body;
       const result = await reviewCollection.insertOne(data);
       res.send(result);
-    })
+    });
+
 
 
 
@@ -266,6 +273,16 @@ async function run() {
       const result = await appliedScholarshipCollection.deleteOne(query);
       res.send(result);
     });
+
+    // delete myReview
+    app.delete("/deleteMyReview/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await reviewCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    
 
 
 
@@ -323,8 +340,23 @@ async function run() {
       res.send(result);
     });
 
+    // editApplication
+    app.patch("/editReview/:id", async (req, res) => {
+      const id = req.params.id;
+      const { rating, comment, reviewDate } = req.body;
 
+      const query = { _id: new ObjectId(id) };
+      const updatedData = {
+        $set: {
+          rating,
+          comment,
+          reviewDate,
+        },
+      };
 
+      const result = await reviewCollection.updateOne(query, updatedData);
+      res.send(result);
+    });
 
 
 
