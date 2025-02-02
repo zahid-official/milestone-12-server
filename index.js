@@ -125,9 +125,68 @@ async function run() {
       res.send({ admin, moderator, user });
     });
 
+    // filter users
+    app.get("/filter/:role", async (req, res) => {
+      const role = req.params.role;
+      const query = { role };
+      const cursor = usersCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // filter by date
+    app.get("/filterDate/:date", async (req, res) => {
+      const date = req.params.date;
+
+      let query = {};
+      let sortField = {};
+      let sortOrder = -1;
+
+      // check clientside value
+      if (date === "currentDate") {
+        query = { currentDate: { $exists: true } };
+        sortField = { currentDate: sortOrder };
+      } else if (date === "deadline") {
+        query = { deadline: { $exists: true } };
+        sortField = { deadline: sortOrder };
+      }
+
+      const result = await appliedScholarshipCollection
+        .find(query)
+        .sort(sortField)
+        .toArray();
+      res.send(result);
+    });
+
     // top scholarship
     app.get("/topScholarship", async (req, res) => {
-      const result = await scholarshipCollection.find().toArray();
+      const ratings = await reviewCollection
+        .aggregate([
+          {
+            $group: {
+              _id: "$scholarshipId",
+              averageRating: { $avg: "$rating" },
+            },
+          },
+        ])
+        .toArray();
+
+      // latest data based on lowest applicationFees
+      const scholarships = await scholarshipCollection
+        .find()
+        .sort({ applicationFees: 1, _id: -1 })
+        .limit(6)
+        .toArray();
+
+      // ratingCollection avgRating adding in scholarshipCollection
+      let result = scholarships.map((scholarship) => {
+        let rating = ratings.find((i) => i._id === scholarship._id.toString());
+
+        // adding avgRating as new objectProperty
+        scholarship.avgRating = rating ? rating.averageRating : "";
+        return scholarship;
+      });
+
       res.send(result);
     });
 
@@ -181,16 +240,57 @@ async function run() {
       res.send(result);
     });
 
-    
+    // review for scholarship details
+    app.get("/stroies/:id", async (req, res) => {
+      const scholarshipId = req.params.id;
+      const query = { scholarshipId };
+      const result = await reviewCollection.find(query).toArray();
+      res.send(result);
+    });
 
+    // search for allScholarships
+    app.get("/search", async (req, res) => {
+      const { searchQuery } = req.query;
+      let option = {};
+      if (searchQuery) {
+        option = {
+          $or: [
+            { universityName: { $regex: searchQuery, $options: "i" } },
+            { scholarshipName: { $regex: searchQuery, $options: "i" } },
+            { degree: { $regex: searchQuery, $options: "i" } },
+          ],
+        };
 
+        const result = await scholarshipCollection.find(option).toArray();
+        res.send(result);
+      }
+    });
+
+    // pagination
+    app.get("/allScholarshipPagination", async (req, res) => {
+      const pageNo = parseInt(req.query.pageNo - 1);
+      const pageItems = parseInt(req.query.pageItems);
+
+      const cursor = scholarshipCollection
+        .find()
+        .skip(pageNo * pageItems)
+        .limit(pageItems);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // pagination for visas
+    app.get("/total", async (req, res) => {
+      const count = await scholarshipCollection.estimatedDocumentCount();
+      res.send({ count });
+    });
 
     // create Operation (create User)
     app.post("/users", async (req, res) => {
       const user = req.body;
-      
+
       // set role
-      if(!user.role){
+      if (!user.role) {
         user.role = "User";
       }
 
@@ -245,28 +345,6 @@ async function run() {
       res.send(result);
     });
 
-      // filter users
-  app.get('/filter/:role', async(req, res) => {
-    const role = req.params.role;
-    const query = {role};
-    const cursor = usersCollection.find(query);
-    const result = await cursor.toArray();
-    res.send(result);
-  })
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // delete Operation (userDelete)
     app.delete("/users/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
@@ -306,17 +384,6 @@ async function run() {
       const result = await scholarshipCollection.deleteOne(query);
       res.send(result);
     });
-
-
-
-
-
-
-
-
-
-
-
 
     // update Operation
     app.patch("/users/role/:id", verifyJWT, verifyAdmin, async (req, res) => {
@@ -443,7 +510,7 @@ async function run() {
     // update Status AppliedScholarship
     app.patch("/deleteAppliedScholarship/:id", async (req, res) => {
       const id = req.params.id;
-      console.log(id);
+
       const status = "Rejected";
       const query = { _id: new ObjectId(id) };
       const updatedData = {
@@ -461,7 +528,7 @@ async function run() {
     // feedback
     app.patch("/feedback/:id", async (req, res) => {
       const id = req.params.id;
-      const { feedback } = req.body;
+      const feedback = req.body.feedback;
 
       const query = { _id: new ObjectId(id) };
       const updatedData = {
@@ -470,23 +537,17 @@ async function run() {
         },
       };
 
-      const result = await appliedScholarshipCollection.updateOne(query, updatedData);
+      const result = await appliedScholarshipCollection.updateOne(
+        query,
+        updatedData
+      );
       res.send(result);
     });
 
 
 
 
-
-
-
-
-
-
-
-
-
-
+    
   } finally {
   }
 }
