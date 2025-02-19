@@ -134,6 +134,16 @@ async function run() {
       res.send(result);
     });
 
+
+
+
+
+
+
+
+
+
+
     // filter by date
     app.get("/filterDate/:date", async (req, res) => {
       const date = req.params.date;
@@ -157,6 +167,23 @@ async function run() {
         .toArray();
       res.send(result);
     });
+
+
+    // sorting
+    app.get("/sorting/:type", async(req, res) => {
+      const type = req.params.type;
+      const query = {}
+      const sortOrder = type === "Ascending" ? 1 : -1; 
+      const result = await scholarshipCollection.find(query).sort({ applicationFees: sortOrder }).toArray();
+      res.send(result);
+    })
+
+
+
+
+
+
+
 
     // top scholarship
     app.get("/topScholarship", async (req, res) => {
@@ -189,6 +216,21 @@ async function run() {
 
       res.send(result);
     });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // scholarship Details
     app.get("/scholarshipDetails/:id", async (req, res) => {
